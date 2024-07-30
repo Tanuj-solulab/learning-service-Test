@@ -1,0 +1,21 @@
+name: demo
+author: valory
+version: 0.1.0
+type: contract
+description: The contract package for the Real Estate Solution contract.
+license: Apache-2.0
+aea_version: '>=1.0.0, <2.0.0'
+fingerprint:
+  __init__.py: bafybeiajm5fcftn6g3ki7udj6mgxjzefaqd6hcp43adx7djwum2duu42ty
+  build/Demo.json: bafybeichsz7gx3uwsunnbkiymam7sackauf544u4tcdoopwyj2n4jknab4
+  contract.py: bafybeiagek6pckuiceg5w7qo7zaadu675dfffwakatqj6pmmhq5ts7upje
+fingerprint_ignore_patterns: []
+contracts: []
+class_name: Demo
+contract_interface_paths:
+  ethereum: build/Demo.json
+dependencies:
+  open-aea-ledger-ethereum:
+    version: ==1.53.0
+  web3:
+    version: <7,>=6.0.0

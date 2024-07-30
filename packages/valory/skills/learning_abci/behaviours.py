@@ -41,6 +41,13 @@ from packages.valory.skills.learning_abci.rounds import (
     SynchronizedData,
     TxPreparationRound,
 )
+from packages.valory.contracts.demo.contract import (
+    Demo,
+)
+from packages.valory.contracts.real_estate_solution.contract import (RealEstateSolutionContract)
+from packages.valory.skills.abstract_round_abci.io_.store import SupportedFiletype
+from packages.valory.protocols.contract_api import ContractApiMessage
+import json
 
 
 HTTP_OK = 200
@@ -81,7 +88,26 @@ class APICheckBehaviour(LearningBaseBehaviour):  # pylint: disable=too-many-ance
         with self.context.benchmark_tool.measure(self.behaviour_id).local():
             sender = self.context.agent_address
             price = yield from self.get_price()
-            payload = APICheckPayload(sender=sender, price=price)
+            self.context.logger.info(f"contress address:{self.params.real_estate_address}")
+            contract_response = yield from self.get_contract_api_response(
+                performative=ContractApiMessage.Performative.GET_STATE, 
+                contract_id=str(Demo.contract_id),
+                contract_callable="get_number",
+                contract_address=self.params.real_estate_address,
+            )
+            self.context.logger.info(
+                f"These are the properties for sale: {contract_response}"
+            )
+
+            properties_for_sale = contract_response.state.body["data"]
+            ipfs_hash = yield from self.send_to_ipfs(
+                "ListedProperties.json",
+                {"Properties for sale: ": properties_for_sale},
+                filetype=SupportedFiletype.JSON,
+            )
+
+            self.context.logger.info(f"The IPFS hash is : {ipfs_hash}")
+            payload = APICheckPayload(sender=sender, price=price, ipfs_hash=ipfs_hash)
 
         with self.context.benchmark_tool.measure(self.behaviour_id).consensus():
             yield from self.send_a2a_transaction(payload)
@@ -91,11 +117,29 @@ class APICheckBehaviour(LearningBaseBehaviour):  # pylint: disable=too-many-ance
 
     def get_price(self):
         """Get token price from Coingecko"""
-        # result = yield from self.get_http_response("coingecko.com")
-        yield
-        price = 1.0
-        self.context.logger.info(f"Price is {price}")
-        return price
+        response = yield from self.get_http_response(
+            method="GET",
+            url=self.params.coingecko_price_template,
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "x-cg-demo-api-key": self.params.coingecko_api_key,
+            },
+        )
+        if response.status_code != 200:
+            self.context.logger.error(
+                f"Error in fetch the price,Status_code{response.status_code}"
+            )
+
+        try:
+            response_body = response.body
+            response_data = json.loads(response_body)
+            price = response_data["autonolas"]["usd"]
+            self.context.logger.info(f"The price is {price}")
+            return price
+        except json.JSONDecodeError:
+            self.context.logger.error("Could not parse the response body")
+            return None
 
 
 class DecisionMakingBehaviour(
