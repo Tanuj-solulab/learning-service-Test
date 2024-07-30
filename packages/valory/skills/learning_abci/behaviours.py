@@ -41,9 +41,6 @@ from packages.valory.skills.learning_abci.rounds import (
     SynchronizedData,
     TxPreparationRound,
 )
-from packages.valory.contracts.demo.contract import (
-    Demo,
-)
 from packages.valory.contracts.real_estate_solution.contract import (RealEstateSolutionContract)
 from packages.valory.skills.abstract_round_abci.io_.store import SupportedFiletype
 from packages.valory.protocols.contract_api import ContractApiMessage
@@ -91,8 +88,8 @@ class APICheckBehaviour(LearningBaseBehaviour):  # pylint: disable=too-many-ance
             self.context.logger.info(f"contress address:{self.params.real_estate_address}")
             contract_response = yield from self.get_contract_api_response(
                 performative=ContractApiMessage.Performative.GET_STATE, 
-                contract_id=str(Demo.contract_id),
-                contract_callable="get_number",
+                contract_id=str(RealEstateSolutionContract.contract_id),
+                contract_callable="get_properties_for_sale",
                 contract_address=self.params.real_estate_address,
             )
             self.context.logger.info(
